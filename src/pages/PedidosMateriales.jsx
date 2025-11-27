@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,17 @@ const PedidosMateriales = ({ isEmbedded = false }) => {
   useEffect(() => {
     fetchPedidos();
   }, [fetchPedidos]);
+
+  // Sincronizar el pedido seleccionado cuando la lista de pedidos se actualice
+  useEffect(() => {
+    if (pedidoGuardado && pedidos.length > 0) {
+      const pedidoActualizado = pedidos.find(p => p.id === pedidoGuardado.id);
+      // Si hay cambios en el pedido seleccionado, actualizamos la referencia local
+      if (pedidoActualizado && JSON.stringify(pedidoActualizado) !== JSON.stringify(pedidoGuardado)) {
+        setPedidoGuardado(pedidoActualizado);
+      }
+    }
+  }, [pedidos, pedidoGuardado]);
 
   const handleCreatePedido = async ({ solicitante_id, tipo, asociacionId, observaciones_generales, items }) => {
     // Use maybeSingle() instead of single() to gracefully handle the case where no rows exist (first order)
@@ -164,6 +174,7 @@ const PedidosMateriales = ({ isEmbedded = false }) => {
         onOpenChange={setNuevoPedidoDialogOpen}
         onSave={handleCreatePedido}
         pedidoGuardado={pedidoGuardado}
+        onPedidoUpdated={fetchPedidos}
       />
     </div>
   );

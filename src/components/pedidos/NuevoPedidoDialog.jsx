@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -16,7 +15,7 @@ import { cn } from '@/lib/utils';
 import SeleccionarFormatoDialog from '@/components/pedidos/SeleccionarFormatoDialog';
 import AutorizarPedidoDialog from '@/components/pedidos/AutorizarPedidoDialog';
 
-const NuevoPedidoDialog = ({ open, onOpenChange, onSave, pedidoGuardado, proyecto: proyectoPrefijado }) => {
+const NuevoPedidoDialog = ({ open, onOpenChange, onSave, pedidoGuardado, proyecto: proyectoPrefijado, onPedidoUpdated }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -120,7 +119,10 @@ const NuevoPedidoDialog = ({ open, onOpenChange, onSave, pedidoGuardado, proyect
         setTipoAsociacion(pedidoGuardado.proyecto_id ? 'proyecto' : 'cuenta');
         setAsociacionId(pedidoGuardado.proyecto_id ? pedidoGuardado.proyecto_id.toString() : pedidoGuardado.cuenta);
         setObservacionesGenerales(pedidoGuardado.observaciones || '');
-        setEstatus(pedidoGuardado.estatus || 'Pendiente');
+        // Solo actualizamos si NO estamos en medio de una actualización manual para evitar el flasheo
+        if (!updatingStatus) {
+            setEstatus(pedidoGuardado.estatus || 'Pendiente');
+        }
         
         let loadedItems = [];
         if (pedidoGuardado.items) {
@@ -227,7 +229,10 @@ const NuevoPedidoDialog = ({ open, onOpenChange, onSave, pedidoGuardado, proyect
               
               // Update local preview data
               setCurrentPedidoData(prev => ({ ...prev, estatus: newStatus }));
-              
+              // NUEVO: Avisar al componente padre que recargue los datos de la tabla
+              if (onPedidoUpdated) {
+                  await onPedidoUpdated();
+              }
           } catch (error) {
               console.error(error);
               toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el estatus.' });
